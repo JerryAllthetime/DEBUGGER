@@ -3,10 +3,105 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as mtick
+from sklearn.preprocessing import LabelEncoder
+import os
+from nltk.stem import WordNetLemmatizer
+from nltk.stem.porter import PorterStemmer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 def remove(df: pd.DataFrame, attribute_list: list):
     cleaned_df = df.drop(columns=attribute_list)
     return cleaned_df
+
+def fillna(df: DataFrame):
+    df['type_of_vehicle'].fillna('Unknown', inplace=True)
+    df['category'].fillna('Unknown', inplace=True)
+    df['transmission'].fillna('Unknown', inplace=True)
+    df['eco_category'].fillna('Unknown', inplace=True)
+    df['make'].fillna('Unknown', inplace=True)
+    return df
+
+def cat_to_int(df: DataFrame, ):
+    # Initialize label encoders
+    le_type_of_vehicle = LabelEncoder()
+    le_category = LabelEncoder()
+    le_transmission = LabelEncoder()
+    le_eco_category = LabelEncoder()
+    le_make = LabelEncoder()
+
+    # Fit and transform the categories to integers
+    df['type_of_vehicle'] = le_type_of_vehicle.fit_transform(df['type_of_vehicle'])
+    df['category'] = le_category.fit_transform(df['category'])
+    df['transmission'] = le_transmission.fit_transform(df['transmission'])
+    df['eco_category'] = le_eco_category.fit_transform(df['eco_category'])
+    df['make'] = le_make.fit_transform(df['make'])
+    return df
+
+def ntlk(df: DataFrame):
+    # TODO
+    download_dir = '/storage/yxchen/miniconda3/envs/dpo/nltk_data'
+    nltk.download('punkt', download_dir=download_dir)
+    nltk.download('punkt_tab', download_dir=download_dir)
+    nltk.download('wordnet', download_dir=download_dir)
+    nltk.download('stopwords', download_dir=download_dir)
+    nltk.download('omw-1.4', download_dir=download_dir)
+    nltk.download('averaged_perceptron_tagger', download_dir=download_dir)
+
+    nltk_stopwords = set(stopwords.words('english'))
+    nltk_stopwords.remove('no')
+    nltk_stopwords.remove('not')
+
+    porter_stemmer = PorterStemmer()
+    wordnet_lemmatizer = WordNetLemmatizer()
+    punctuation_translator = str.maketrans('', '', string.punctuation)
+
+def preprocess_text(s, lowercase=True, remove_stopwords=True, remove_punctuation=True, stemmer=None, lemmatizer=None):
+    tokens = word_tokenize(s)
+
+    if lemmatizer is not None:
+        tokens = lemmatize_tokens(lemmatizer, tokens)
+    elif stemmer is not None:
+        tokens = stem_tokens(stemmer, tokens)
+
+    if lowercase:
+        tokens = [token.lower() for token in tokens]
+
+    if remove_stopwords:
+        tokens = [token for token in tokens if not token in nltk_stopwords]
+
+    # Remove all punctuation marks if needed (note: also converts, e.g, "Mr." to "Mr")
+    if remove_punctuation:
+        tokens = [ ''.join(c for c in s if c not in string.punctuation) for s in tokens ]
+        tokens = [ token for token in tokens if len(token) > 0 ] # Remove "empty" tokens
+
+    return ' '.join(tokens)
+
+def remove_punctuation(s):
+    return s.translate(punctuation_translator)
+
+def lemmatize_tokens(lemmatizer, tokens):
+    pos_tag_list = pos_tag(tokens)
+    for idx, (token, tag) in enumerate(pos_tag_list):
+        tag_simple = tag[0].lower() # Converts, e.g., "VBD" to "c"
+        if tag_simple in ['n', 'v', 'j']:
+            word_type = tag_simple.replace('j', 'a')
+        else:
+            word_type = 'n'
+        lemmatized_token = lemmatizer.lemmatize(token, pos=word_type)
+        tokens[idx] = lemmatized_token
+    return tokens
+
+def stem_tokens(stemmer, tokens):
+    for idx, token in enumerate(tokens):
+        tokens[idx] = stemmer.stem(token)
+    return tokens
+
+def preprocess_numerical(df: DataFrame, feature):
+    df[feature] = df[feature].fillna(df[feature].median())
+    from sklearn.preprocessing import StandardScaler
+    scaler = StandardScaler()
+    df[feature] = scaler.fit_transform(df[[feature]])
+    return df
 
 def handle_missing_value(df: pd.DataFrame, threshold: float = 50.0):
     # 首先，对于缺失值，我们可以删除缺失值过多，且对价格没有什么影响的列，比如缺失值超过 50% 的列
