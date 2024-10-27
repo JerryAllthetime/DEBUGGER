@@ -1,0 +1,101 @@
+We are running preprocessing right now
+
+数值特征描述性统计：
+       manufactured         power  ...         price  registration_year
+count  25000.000000  22360.000000  ...  2.500000e+04       25000.000000
+mean    2015.646400    140.908095  ...  1.151486e+05        2016.249600
+std        5.723708     81.675265  ...  1.555725e+05           5.239007
+min     1939.000000      0.000000  ...  7.000000e+02        1959.000000
+25%     2014.000000     90.000000  ...  4.914100e+04        2015.000000
+50%     2017.000000    111.000000  ...  7.888800e+04        2017.000000
+75%     2019.000000    155.000000  ...  1.258000e+05        2019.000000
+max     2024.000000    735.000000  ...  2.899999e+06        2024.000000
+
+[8 rows x 12 columns]
+
+ Number of unique values for class feature 'make'
+toyota           3150
+mercedes-benz    3019
+bmw              2627
+honda            2466
+nissan           1355
+Name: make, dtype: int64
+
+ Number of unique values for class feature 'model'
+amg      809
+vezel    610
+2        542
+civic    529
+golf     438
+Name: model, dtype: int64
+
+ Number of unique values for class feature 'type_of_vehicle'
+suv                5905
+luxury sedan       4585
+sports car         3257
+mid-sized sedan    3097
+hatchback          2691
+Name: type_of_vehicle, dtype: int64
+
+ Number of unique values for class feature 'category'
+parf car, premium ad car                     4935
+parf car                                     4366
+coe car, premium ad car                      1736
+coe car                                      1312
+parf car, premium ad car, low mileage car     979
+Name: category, dtype: int64
+
+ Number of unique values for class feature 'transmission'
+auto      23301
+manual     1699
+Name: transmission, dtype: int64
+
+数值特征描述性统计：
+       manufactured        power  ...           arf  registration_year
+count  10000.000000  8914.000000  ...  9.935000e+03       10000.000000
+mean    2015.631100   140.861230  ...  4.461723e+04        2016.220300
+std        5.736332    80.959497  ...  7.639350e+04           5.239534
+min     1948.000000     0.000000  ...  4.040000e+02        1956.000000
+25%     2014.000000    90.000000  ...  1.345800e+04        2015.000000
+50%     2017.000000   112.000000  ...  2.529200e+04        2017.000000
+75%     2019.000000   155.000000  ...  4.618150e+04        2019.000000
+max     2024.000000   735.000000  ...  1.281600e+06        2024.000000
+
+[8 rows x 11 columns]
+
+ Number of unique values for class feature 'make'
+mercedes-benz    1266
+toyota           1248
+bmw              1049
+honda            1002
+nissan            504
+Name: make, dtype: int64
+
+ Number of unique values for class feature 'model'
+amg      317
+civic    232
+2        229
+vezel    223
+c180     195
+Name: model, dtype: int64
+
+ Number of unique values for class feature 'type_of_vehicle'
+suv                2261
+luxury sedan       1930
+mid-sized sedan    1300
+sports car         1273
+hatchback          1036
+Name: type_of_vehicle, dtype: int64
+
+ Number of unique values for class feature 'category'
+parf car, premium ad car                     2009
+parf car                                     1654
+coe car, premium ad car                       735
+coe car                                       513
+parf car, premium ad car, low mileage car     425
+Name: category, dtype: int64
+
+ Number of unique values for class feature 'transmission'
+auto      9257
+manual     743
+Name: transmission, dtype: int64

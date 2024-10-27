@@ -8,6 +8,40 @@ import os
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.porter import PorterStemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from pandas import DataFrame
+import nltk
+import pandas as pd
+import numpy as np
+import string
+import pickle
+from sklearn.metrics import classification_report,confusion_matrix
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+import string
+import pickle
+import nltk
+from nltk import word_tokenize
+from nltk import pos_tag
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.stem.porter import PorterStemmer
+import pandas as pd
+import nltk
+import re
+import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.model_selection import train_test_split, cross_validate
+from sklearn.metrics import classification_report,confusion_matrix
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import KNeighborsClassifier
+from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize, word_tokenize
+from sklearn.metrics import classification_report
+from sklearn.naive_bayes import MultinomialNB
+from sklearn import tree
+
 
 def remove(df: pd.DataFrame, attribute_list: list):
     cleaned_df = df.drop(columns=attribute_list)
@@ -37,15 +71,23 @@ def cat_to_int(df: DataFrame, ):
     df['make'] = le_make.fit_transform(df['make'])
     return df
 
-def ntlk(df: DataFrame):
-    # TODO
-    download_dir = '/storage/yxchen/miniconda3/envs/dpo/nltk_data'
-    nltk.download('punkt', download_dir=download_dir)
-    nltk.download('punkt_tab', download_dir=download_dir)
-    nltk.download('wordnet', download_dir=download_dir)
-    nltk.download('stopwords', download_dir=download_dir)
-    nltk.download('omw-1.4', download_dir=download_dir)
-    nltk.download('averaged_perceptron_tagger', download_dir=download_dir)
+
+def preprocess_text(s, lowercase=True, remove_stopwords=True, remove_punctuation=True, stemmer=None, lemmatizer=None):
+        # TODO
+    # download_dir = '/storage/yxchen/miniconda3/envs/dpo/nltk_data'
+    # nltk.download('punkt', download_dir=download_dir)
+    # nltk.download('punkt_tab', download_dir=download_dir)
+    # nltk.download('wordnet', download_dir=download_dir)
+    # nltk.download('stopwords', download_dir=download_dir)
+    # nltk.download('omw-1.4', download_dir=download_dir)
+    # nltk.download('averaged_perceptron_tagger', download_dir=download_dir)
+    nltk.download('punkt')
+    nltk.download('punkt_tab')
+
+    nltk.download('wordnet')
+    nltk.download('stopwords')
+    nltk.download('omw-1.4')
+    nltk.download('averaged_perceptron_tagger')
 
     nltk_stopwords = set(stopwords.words('english'))
     nltk_stopwords.remove('no')
@@ -54,8 +96,6 @@ def ntlk(df: DataFrame):
     porter_stemmer = PorterStemmer()
     wordnet_lemmatizer = WordNetLemmatizer()
     punctuation_translator = str.maketrans('', '', string.punctuation)
-
-def preprocess_text(s, lowercase=True, remove_stopwords=True, remove_punctuation=True, stemmer=None, lemmatizer=None):
     tokens = word_tokenize(s)
 
     if lemmatizer is not None:
@@ -76,8 +116,8 @@ def preprocess_text(s, lowercase=True, remove_stopwords=True, remove_punctuation
 
     return ' '.join(tokens)
 
-def remove_punctuation(s):
-    return s.translate(punctuation_translator)
+# def remove_punctuation(s):
+#     return s.translate(punctuation_translator)
 
 def lemmatize_tokens(lemmatizer, tokens):
     pos_tag_list = pos_tag(tokens)
