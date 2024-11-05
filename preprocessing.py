@@ -41,7 +41,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from sklearn.metrics import classification_report
 from sklearn.naive_bayes import MultinomialNB
 from sklearn import tree
-
+from sklearn.decomposition import PCA
 
 def remove(df: pd.DataFrame, attribute_list: list):
     cleaned_df = df.drop(columns=attribute_list)
@@ -74,7 +74,6 @@ def cat_to_int(df: DataFrame, ):
 
 def preprocess_text(s, lowercase=True, remove_stopwords=True, remove_punctuation=True, stemmer=None, lemmatizer=None):
         # TODO
-    # download_dir = '/storage/yxchen/miniconda3/envs/dpo/nltk_data'
     # nltk.download('punkt', download_dir=download_dir)
     # nltk.download('punkt_tab', download_dir=download_dir)
     # nltk.download('wordnet', download_dir=download_dir)
@@ -214,4 +213,29 @@ def handle_manufactured(df: pd.DataFrame):
     # 查看填补后的 manufactured 列的描述性统计信息
     filled_manufactured_summary = df['manufactured'].describe()
     manufactured_missing_after
+    return df
+
+def generate_semantic_features(df: pd.DataFrame):
+    # open the pickle file
+    with open('./semantic_file/car_price.pkl', 'rb') as f:
+        car_price = pickle.load(f)
+
+    with open('./semantic_file/car_embedding.pkl', 'rb') as f:
+        car_embedding = pickle.load(f)
+        
+    df['estimated_price'] = df['title'].map(car_price)
+    df['title_embedding'] = df['title'].map(car_embedding)
+
+    # Assuming 'df' is your DataFrame and 'title_embedding' is a list of embeddings in each row
+    # Extract embeddings and apply PCA
+    embeddings = list(data['title_embedding'])
+    pca = PCA(n_components=10)
+    reduced_embeddings = pca.fit_transform(embeddings)
+
+    # Create DataFrame for reduced embeddings and join with original DataFrame
+    reduced_df = pd.DataFrame(reduced_embeddings, columns=[f'embedding_dim_{i+1}' for i in range(10)])
+    data = data.join(reduced_df)
+
+    # Drop the original 'title_embedding' column if no longer needed
+    data = data.drop(columns=['title_embedding'])
     return df
