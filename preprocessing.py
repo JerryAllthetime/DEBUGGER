@@ -1,3 +1,4 @@
+#preprocessing.py
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -215,6 +216,7 @@ def handle_manufactured(df: pd.DataFrame):
     manufactured_missing_after
     return df
 
+
 def generate_semantic_features(df: pd.DataFrame):
     # open the pickle file
     with open('./semantic_file/car_price.pkl', 'rb') as f:
@@ -239,3 +241,100 @@ def generate_semantic_features(df: pd.DataFrame):
     # Drop the original 'title_embedding' column if no longer needed
     data = data.drop(columns=['title_embedding'])
     return df
+
+
+def remove_outliers(df: pd.DataFrame, threshold: float = 1.5) -> pd.DataFrame:
+    """
+    Removes outliers from each numeric column in the DataFrame based on the IQR method.
+    
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame.
+    - threshold (float): The multiplier for the IQR to determine outliers. Default is 1.5.
+    
+    Returns:
+    - pd.DataFrame: The DataFrame with outliers removed.
+    """
+    # Make a copy of the DataFrame to avoid modifying the original data
+    df_cleaned = df.copy()
+    
+    # Iterate through each numeric column
+    numeric_columns = df_cleaned.select_dtypes(include=['int64', 'float64']).columns
+    for col in numeric_columns:
+        print(f"Removing outliers with threshold {threshold}*IQR for column {col}")
+        # Calculate IQR for the column
+        Q1 = df_cleaned[col].quantile(0.25)
+        Q3 = df_cleaned[col].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - threshold * IQR
+        upper_bound = Q3 + threshold * IQR
+        
+        # Filter out the rows containing outliers
+        before_removal = df_cleaned.shape[0]
+        df_cleaned = df_cleaned[(df_cleaned[col] >= lower_bound) & (df_cleaned[col] <= upper_bound)]
+        after_removal = df_cleaned.shape[0]
+        
+        # Print the number of outliers removed for this column
+        print(f"{col}: Removed {before_removal - after_removal} outliers with threshold {threshold}*IQR.")
+    
+    return df_cleaned
+
+import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+#remove 之前做
+def view_outliers_before(df: pd.DataFrame, threshold: float = 1.5):
+    """
+    Plots the distribution and highlights outliers for each numeric column in the DataFrame.
+    Saves each plot as an image with filenames based on the column names.
+    Prints the number of outliers for each column.
+    
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame.
+    - threshold (float): The multiplier for the IQR to determine outliers. Default is 1.5.
+    """
+    # Define the directory to save the images
+    picture_folder_path = './pictures/before_processed'
+    os.makedirs(picture_folder_path, exist_ok=True)  # Create directory if it does not exist
+    print(f"Directory '{picture_folder_path}' created successfully.")
+
+    # Get numeric columns
+    numeric_columns = df.select_dtypes(include=['int64', 'float64']).columns
+    
+    for col in numeric_columns:
+        # Calculate IQR
+        Q1 = df[col].quantile(0.25)
+        Q3 = df[col].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - threshold * IQR
+        upper_bound = Q3 + threshold * IQR
+        print(f"Lower bound: {lower_bound}, Upper bound: {upper_bound}")
+        
+        # Identify outliers
+        outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
+        outlier_count = len(outliers)
+        
+        # Print outlier count
+        print(f"{col}: {outlier_count} outliers detected with threshold {threshold}*IQR.")
+        
+        # Plot histogram for data distribution
+        plt.figure(figsize=(12, 6))
+        plt.subplot(1, 2, 1)
+        sns.histplot(df[col].dropna(), kde=True, bins=30)
+        plt.title(f'Distribution of {col}')
+        plt.xlabel(col)
+        plt.ylabel('Frequency')
+
+        # Plot boxplot for outliers
+        plt.subplot(1, 2, 2)
+        sns.boxplot(x=df[col])
+        plt.title(f'Outliers in {col}')
+        plt.xlabel(col)
+
+        plt.tight_layout()
+        
+        # Save the plot as a PNG file in the specified directory
+        file_path = os.path.join(picture_folder_path, f'{col}_distribution_outliers_before.png')
+        plt.savefig(file_path)
+        plt.close()  # Close the plot to free up memory
