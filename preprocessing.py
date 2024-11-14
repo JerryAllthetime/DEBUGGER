@@ -73,13 +73,6 @@ def cat_to_int(df: DataFrame, ):
 
 
 def preprocess_text(s, lowercase=True, remove_stopwords=True, remove_punctuation=True, stemmer=None, lemmatizer=None):
-        # TODO
-    # nltk.download('punkt', download_dir=download_dir)
-    # nltk.download('punkt_tab', download_dir=download_dir)
-    # nltk.download('wordnet', download_dir=download_dir)
-    # nltk.download('stopwords', download_dir=download_dir)
-    # nltk.download('omw-1.4', download_dir=download_dir)
-    # nltk.download('averaged_perceptron_tagger', download_dir=download_dir)
     nltk.download('punkt')
     nltk.download('punkt_tab')
 
@@ -220,22 +213,30 @@ def generate_semantic_features(df: pd.DataFrame):
     with open('./semantic_file/car_price.pkl', 'rb') as f:
         car_price = pickle.load(f)
 
-    with open('./semantic_file/car_embedding.pkl', 'rb') as f:
-        car_embedding = pickle.load(f)
+    # with open('./semantic_file/car_embedding.pkl', 'rb') as f:
+    #     car_embedding = pickle.load(f)
         
     df['estimated_price'] = df['title'].map(car_price)
-    df['title_embedding'] = df['title'].map(car_embedding)
+    # df['title_embedding'] = df['title'].map(car_embedding)
 
     # Assuming 'df' is your DataFrame and 'title_embedding' is a list of embeddings in each row
     # Extract embeddings and apply PCA
-    embeddings = list(data['title_embedding'])
-    pca = PCA(n_components=10)
-    reduced_embeddings = pca.fit_transform(embeddings)
+    # embeddings = list(data['title_embedding'])
+    # pca = PCA(n_components=10)
+    # reduced_embeddings = pca.fit_transform(embeddings)
 
-    # Create DataFrame for reduced embeddings and join with original DataFrame
-    reduced_df = pd.DataFrame(reduced_embeddings, columns=[f'embedding_dim_{i+1}' for i in range(10)])
-    data = data.join(reduced_df)
+    # # Create DataFrame for reduced embeddings and join with original DataFrame
+    # reduced_df = pd.DataFrame(reduced_embeddings, columns=[f'embedding_dim_{i+1}' for i in range(10)])
+    # data = data.join(reduced_df)
 
-    # Drop the original 'title_embedding' column if no longer needed
-    data = data.drop(columns=['title_embedding'])
+    # # Drop the original 'title_embedding' column if no longer needed
+    # data = data.drop(columns=['title_embedding'])
+    return df
+
+
+def make_imputer(df):
+    df['make'] = df.apply(
+    lambda row: row['title'].split()[0] if pd.isnull(row['make']) else row['make'],
+    axis=1
+    )
     return df

@@ -9,11 +9,11 @@ def overview(df: pd.DataFrame):
     print(df.info())
     print(df.head())
 
-    # Part 2: Count the number of numerical and categorical attribute
-    # numerical
+    # Part 2: Count the number of numerical and categorical attributes
+    # Numerical
     numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
     num_numerical = len(numerical_columns)
-    # categorical
+    # Categorical
     categorical_columns = df.select_dtypes(include=['object', 'category']).columns
     num_categorical = len(categorical_columns)
     # Displaying the counts
@@ -30,16 +30,16 @@ def overview(df: pd.DataFrame):
     print(missing_df)
 
     # Part 4: Duplicate detection
-    print("Duplicates in {df} Dataset：", df.duplicated().sum())
+    print(f"Duplicates in Dataset: {df.duplicated().sum()}")
 
 def description(df: pd.DataFrame):
-    print("\n数值特征描述性统计：")
+    print("\nDescriptive statistics for numerical features:")
     print(df.describe())
 
-    # 类别特征的唯一值统计
+    # Unique values for categorical features
     categorical_cols = df.select_dtypes(include='object').columns
     for col in categorical_cols:
-        print(f"\n Number of unique values for class feature '{col}'")
+        print(f"\n Number of unique values for categorical feature '{col}':")
         print(df[col].value_counts().head())
 
 def missing_values_table(df: pd.DataFrame, title: str):
@@ -85,35 +85,34 @@ def analysis_univariate(df: pd.DataFrame):
 
     plt.show()
 
-    # 数值特征分布
+    # Distribution of numerical features
     numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns
     for col in numerical_cols:
         plt.figure(figsize=(10, 5))
         sns.histplot(df[col], bins=30, kde=True)
-        plt.title(f'{col} distribution diagram')
+        plt.title(f'{col} Distribution')
         plt.show()
 
 def analysis_correlation(df: pd.DataFrame):
-    # 数值特征之间的相关性
+    # Correlation between numerical features
     numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
 
-    # 计算数值特征的相关性矩阵
+    # Calculate the correlation matrix for numerical features
     correlation_matrix = df[numeric_cols].corr()
 
-    # 绘制热力图
+    # Plotting the heatmap
     plt.figure(figsize=(12, 10))
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
-    plt.title('Heatmap of correlation between numerical features')
+    plt.title('Heatmap of Correlation between Numerical Features')
     plt.show()
 
-
-    # # 类别特征与数值特征之间的关系
+    # Relationship between categorical and numerical features
     # categorical_cols = df.select_dtypes(include='object').columns
     # for col in categorical_cols:
-    #     if col != 'title' and col != 'description':  # 忽略文本特征
+    #     if col != 'title' and col != 'description':  # Ignore text features
     #         plt.figure(figsize=(12, 6))
     #         sns.boxplot(x=df[col], y=df['indicative_price'])
-    #         plt.title(f'{col} 与 价格之间的关系')
+    #         plt.title(f'Relationship between {col} and Price')
     #         plt.xticks(rotation=45)
     #         plt.show()
 
@@ -122,5 +121,5 @@ def exception_detect(df: pd.DataFrame):
     for col in numeric_cols:
         plt.figure(figsize=(10, 5))
         sns.boxplot(df[col])
-        plt.title(f'{col} boxplot - exception detect')
+        plt.title(f'{col} Boxplot - Outlier Detection')
         plt.show()

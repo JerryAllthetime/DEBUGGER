@@ -1,0 +1,7 @@
+Running prediction...
+Random Forest Best RMSE: 28876.8661 with params: {'n_estimators': 300, 'max_depth': 20, 'min_samples_split': 2, 'min_samples_leaf': 1}
+HistGradientBoosting Best RMSE: 31243.5410 with params: {'learning_rate': 0.05, 'max_iter': 500}
+XGBRegressor Best RMSE: 28940.5896 with params: {'n_estimators': 1000, 'learning_rate': 0.05, 'max_depth': 5}
+Best weights: (0.5, 0.0, 0.5)
+Combined Model RMSE with best weights: 26250.7189
+Predictions saved to submission_combined_predictions.csv
