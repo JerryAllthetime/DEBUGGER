@@ -66,24 +66,33 @@ def main():
     
     # preprocessing here!
     elif arg1 == 'preprocessing':
-        threshold = float(sys.argv[2]) if len(sys.argv) > 2 else 1.5  # 从命令行获取阈值
+        threshold = float(sys.argv[2]) if len(sys.argv) > 2 else 1.5  # Get threshold from command line
         # loading
         train_df = pd.read_csv('raw_data/train.csv')
         test_df = pd.read_csv('raw_data/test.csv')
 
         # preprocessing code
         print("We are running preprocessing right now")
-        cleaned_train_df = remove(train_df, ['eco_category','listing_id','title','description','curb_weight','road_tax','features','accessories'])#先强制删除没有用的列
-        cleaned_train_df = handle_missing_value(cleaned_train_df, threshold=50)#再删除空缺值过多的列
+        cleaned_train_df = remove(train_df, ['eco_category','listing_id','title','description','curb_weight','road_tax','features','accessories'])# First, forcibly delete irrelevant columns
+        cleaned_train_df = handle_missing_value(cleaned_train_df, threshold=50)# Then delete columns with too many missing values
         cleaned_train_df = handle_mileage(cleaned_train_df)
         cleaned_train_df = handle_manufactured(cleaned_train_df)
         
-        view_outliers_before(cleaned_train_df, threshold)
-        print("草泥马")
-        # 4. 移除异常值
-        #输入示例: python main.py preprocessing 2.0
+        # Process the 'make' column
+        cleaned_train_df = handlemiss_make(cleaned_train_df)
+        cleaned_train_df = fill_power_with_knn(cleaned_train_df)
+        cleaned_train_df = fill_engine_cap_with_knn(cleaned_train_df)
+        cleaned_train_df = fill_depreciation_with_knn(cleaned_train_df)
+        cleaned_train_df = fill_omv_with_knn(cleaned_train_df)
+        cleaned_train_df = fill_arf_with_knn(cleaned_train_df)
+        cleaned_train_df = fill_dereg_value_with_knn(cleaned_train_df)
+        cleaned_train_df = fill_no_of_owners_with_mode(cleaned_train_df)
         
-        cleaned_train_df = remove_outliers(cleaned_train_df, threshold)
+        # 4. Outlier handling
+        # Example input: python main.py preprocessing 2.0
+        # view_outliers_before(cleaned_train_df, threshold)
+        # cleaned_train_df = remove_outliers(cleaned_train_df, threshold)
+        
         description(cleaned_train_df)
         cleaned_train_df.to_csv('processed_data/train.csv', index=False) 
 
@@ -140,7 +149,6 @@ def main():
             # fillna(test_df)
         elif arg2 == 'cat_to_int':
             print("transform categorical features to integers")
-        #新加的
         elif arg2 == 'view_outliers_after':
             print("view outliers of training data")
             view_outliers_after(train_df)

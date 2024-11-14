@@ -35,10 +35,10 @@ def overview(df: pd.DataFrame):
     print("Duplicates in {df} Dataset：", df.duplicated().sum())
 
 def description(df: pd.DataFrame):
-    print("\n数值特征描述性统计：")
+    print("\nNumerical features descriptive statistics：")
     print(df.describe())
 
-    # 类别特征的唯一值统计
+    # Unique value statistics for class features
     categorical_cols = df.select_dtypes(include='object').columns
     for col in categorical_cols:
         print(f"\n Number of unique values for class feature '{col}'")
@@ -87,7 +87,7 @@ def analysis_univariate(df: pd.DataFrame):
 
     plt.show()
 
-    # 数值特征分布
+    # Distribution of numerical features
     numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns
     for col in numerical_cols:
         plt.figure(figsize=(10, 5))
@@ -96,28 +96,18 @@ def analysis_univariate(df: pd.DataFrame):
         plt.show()
 
 def analysis_correlation(df: pd.DataFrame):
-    # 数值特征之间的相关性
+    # Correlation between numerical features
     numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
 
-    # 计算数值特征的相关性矩阵
+    # Calculate the correlation matrix for numerical features
     correlation_matrix = df[numeric_cols].corr()
 
-    # 绘制热力图
+    # Plot the heatmap
     plt.figure(figsize=(12, 10))
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
     plt.title('Heatmap of correlation between numerical features')
     plt.show()
 
-
-    # # 类别特征与数值特征之间的关系
-    # categorical_cols = df.select_dtypes(include='object').columns
-    # for col in categorical_cols:
-    #     if col != 'title' and col != 'description':  # 忽略文本特征
-    #         plt.figure(figsize=(12, 6))
-    #         sns.boxplot(x=df[col], y=df['indicative_price'])
-    #         plt.title(f'{col} 与 价格之间的关系')
-    #         plt.xticks(rotation=45)
-    #         plt.show()
 
 def exception_detect(df: pd.DataFrame):
     numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns

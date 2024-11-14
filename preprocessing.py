@@ -44,6 +44,10 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn import tree
 from sklearn.decomposition import PCA
 
+from sklearn.impute import KNNImputer
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+import pandas as pd
+
 def remove(df: pd.DataFrame, attribute_list: list):
     cleaned_df = df.drop(columns=attribute_list)
     return cleaned_df
@@ -144,8 +148,6 @@ def preprocess_numerical(df: DataFrame, feature):
     return df
 
 def handle_missing_value(df: pd.DataFrame, threshold: float = 50.0):
-    # 首先，对于缺失值，我们可以删除缺失值过多，且对价格没有什么影响的列，比如缺失值超过 50% 的列
-    # 清洗后的数据集 重新命名为 cleaned_df 和 cleaned_df
 
     # Calculate the number and percentage of missing values for the training dataset
     missing_count = df.isnull().sum()
@@ -165,7 +167,7 @@ def handle_missing_value(df: pd.DataFrame, threshold: float = 50.0):
     return cleaned_df
 
 def handle_mileage(df: pd.DataFrame):
-    #因为mileage时一个重要的特征，所以我们可以通过其他特征的相关性来填充缺失值
+    #Because mileage is an important feature, we can fill in missing values by the correlation between other features.
 
     # Plotting the distribution of 'mileage' to observe its range and detect any outliers
     plt.figure(figsize=(10, 6))
@@ -196,8 +198,8 @@ def handle_mileage(df: pd.DataFrame):
     return df
 
 def handle_manufactured(df: pd.DataFrame):
-    # 填补 manufactured 列的缺失值
-    # 如果 manufactured 列为空，使用 registration_year - 1 填补；否则保留原值
+    # Fill missing values in the manufactured column
+    # If the manufactured column is empty, fill it with registration_year - 1; otherwise, leave the original value unchanged.
     # Convert 'reg_date' to a datetime format and extract the year
     df['reg_date'] = pd.to_datetime(df['reg_date'], errors='coerce')
     df['registration_year'] = df['reg_date'].dt.year
@@ -208,10 +210,10 @@ def handle_manufactured(df: pd.DataFrame):
 
     )
 
-    # 再次检查 manufactured 列是否还有缺失值
+    # Double check the manufactured column for missing values
     manufactured_missing_after = df['manufactured'].isnull().sum()
 
-    # 查看填补后的 manufactured 列的描述性统计信息
+    # View descriptive statistics for the filled manufactured columns
     filled_manufactured_summary = df['manufactured'].describe()
     manufactured_missing_after
     return df
@@ -283,7 +285,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-#remove 之前做
 def view_outliers_before(df: pd.DataFrame, threshold: float = 1.5):
     """
     Plots the distribution and highlights outliers for each numeric column in the DataFrame.
@@ -338,3 +339,238 @@ def view_outliers_before(df: pd.DataFrame, threshold: float = 1.5):
         file_path = os.path.join(picture_folder_path, f'{col}_distribution_outliers_before.png')
         plt.savefig(file_path)
         plt.close()  # Close the plot to free up memory
+
+# Fill the make column according to the map of model -> make
+def handlemiss_make(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Fills missing values in the 'make' column by looking up the 'model' in an internally generated dictionary.
+
+    Parameters:
+    - df (pd.DataFrame): DataFrame containing 'make' and 'model' columns.
+
+    Returns:
+    - pd.DataFrame: DataFrame with missing 'make' values filled where possible.
+    """
+    # Create a model-to-make dictionary directly within the function
+    model_to_make = {model: make for make, models in df.groupby('make')['model'] for model in models.unique()}
+
+    # Fill missing 'make' values by looking up the model in the generated dictionary
+    for index, row in df.iterrows():
+        if pd.isnull(row['make']) and pd.notnull(row['model']):
+            model = row['model']
+            if model in model_to_make:
+                df.at[index, 'make'] = model_to_make[model]
+
+    print("Missing 'make' values have been filled where possible based on 'model'")
+    return df
+
+
+
+def fill_power_with_knn(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Uses KNN to impute missing values in the 'power' column without pre-filtering rows with missing values 
+    in 'engine_cap', 'depreciation', and 'dereg_value'.
+
+    Parameters:
+    - df (pd.DataFrame): DataFrame containing 'power', 'engine_cap', 'depreciation', 'dereg_value', 
+                         'make', 'model', and 'type_of_vehicle' columns.
+
+    Returns:
+    - pd.DataFrame: DataFrame with missing 'power' values filled.
+    """
+    # Select the feature column for padding
+    columns_to_use = ['power', 'engine_cap', 'depreciation', 'dereg_value', 'make', 'model', 'type_of_vehicle']
+    df_subset = df[columns_to_use].copy()
+
+    # Label the classification features
+    label_encoders = {}
+    for col in ['make', 'model', 'type_of_vehicle']:
+        le = LabelEncoder()
+        df_subset[col] = le.fit_transform(df_subset[col].astype(str).fillna("Unknown"))  
+        label_encoders[col] = le
+
+    # Standardized numerical features
+    scaler = StandardScaler()
+    numeric_features = ['power', 'engine_cap', 'depreciation', 'dereg_value']
+    df_subset[numeric_features] = scaler.fit_transform(df_subset[numeric_features])
+
+    # Fill in missing values with KNNImputer
+    knn_imputer = KNNImputer(n_neighbors=5)
+    df_imputed = knn_imputer.fit_transform(df_subset)
+
+    # Restore the filled data
+    df_imputed = pd.DataFrame(df_imputed, columns=columns_to_use)
+    df_imputed[numeric_features] = scaler.inverse_transform(df_imputed[numeric_features])
+
+    # Assigns the populated 'power' column back to the original dataset
+    df['power'] = df_imputed['power']
+
+    print("Missing 'power' values have been filled using KNN imputation.")
+    return df
+
+
+def fill_engine_cap_with_knn(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Uses KNN to impute missing values in the 'engine_cap' column based on 'make', 'model', 
+    'type_of_vehicle', 'power', and 'price' columns.
+
+    Parameters:
+    - df (pd.DataFrame): DataFrame containing 'engine_cap', 'make', 'model', 'type_of_vehicle', 
+                         'power', and 'price' columns.
+
+    Returns:
+    - pd.DataFrame: DataFrame with missing 'engine_cap' values filled.
+    """
+    # Select the feature column for padding
+    columns_to_use = ['engine_cap', 'make', 'model', 'type_of_vehicle', 'power', 'price']
+    df_subset = df[columns_to_use].copy()
+
+    # Label the classification features
+    label_encoders = {}
+    for col in ['make', 'model', 'type_of_vehicle']:
+        le = LabelEncoder()
+        df_subset[col] = le.fit_transform(df_subset[col].astype(str).fillna("Unknown")) 
+        label_encoders[col] = le
+
+    # Standardized numerical features
+    scaler = StandardScaler()
+    numeric_features = ['engine_cap', 'power', 'price']
+    df_subset[numeric_features] = scaler.fit_transform(df_subset[numeric_features])
+
+    # Fill in missing values with KNNImputer
+    knn_imputer = KNNImputer(n_neighbors=5)
+    df_imputed = knn_imputer.fit_transform(df_subset)
+
+    # Restore the filled data
+    df_imputed = pd.DataFrame(df_imputed, columns=columns_to_use)
+    df_imputed[numeric_features] = scaler.inverse_transform(df_imputed[numeric_features])
+
+    # Assign the populated 'engine_cap' column back to the original data set
+    df['engine_cap'] = df_imputed['engine_cap']
+
+    print("Missing 'engine_cap' values have been filled using KNN imputation.")
+    return df
+
+# df = fill_engine_cap_with_knn(df)
+
+def fill_depreciation_with_knn(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Uses KNN to impute missing values in the 'depreciation' column based on relevant columns.
+
+    Parameters:
+    - df (pd.DataFrame): DataFrame containing 'depreciation' and other related columns.
+
+    Returns:
+    - pd.DataFrame: DataFrame with missing 'depreciation' values filled.
+    """
+    # Select the feature column for padding
+    columns_to_use = ['depreciation', 'make', 'model', 'manufactured', 'type_of_vehicle', 'power', 'engine_cap', 'price']
+    df_subset = df[columns_to_use].copy()
+
+    # Label the classification features
+    label_encoders = {}
+    for col in ['make', 'model', 'type_of_vehicle']:
+        le = LabelEncoder()
+        df_subset[col] = le.fit_transform(df_subset[col].astype(str).fillna("Unknown"))  
+        label_encoders[col] = le
+
+    # Standardized numerical features
+    scaler = StandardScaler()
+    numeric_features = ['depreciation', 'manufactured', 'power', 'engine_cap', 'price']
+    df_subset[numeric_features] = scaler.fit_transform(df_subset[numeric_features])
+
+    # Fill in missing values with KNNImputer
+    knn_imputer = KNNImputer(n_neighbors=5)
+    df_imputed = knn_imputer.fit_transform(df_subset)
+
+    # Restore the filled data
+    df_imputed = pd.DataFrame(df_imputed, columns=columns_to_use)
+    df_imputed[numeric_features] = scaler.inverse_transform(df_imputed[numeric_features])
+
+
+    df['depreciation'] = df_imputed['depreciation']
+
+    print("Missing 'depreciation' values have been filled using KNN imputation.")
+    return df
+
+def fill_omv_with_knn(df: pd.DataFrame) -> pd.DataFrame:
+    # Select features for imputation, including the target column 'omv'
+    features = ['make', 'model', 'type_of_vehicle', 'power', 'price', 'omv']
+    df_knn = df[features].copy()
+
+    # Encode categorical variables
+    label_encoders = {}
+    for col in ['make', 'model', 'type_of_vehicle']:
+        le = LabelEncoder()
+        df_knn[col] = le.fit_transform(df_knn[col].astype(str))  # Convert to string to avoid NaN values
+        label_encoders[col] = le
+
+    # Initialize KNNImputer
+    knn_imputer = KNNImputer(n_neighbors=5)
+
+    # Use KNNImputer to fill 'omv' column
+    df_knn_imputed = knn_imputer.fit_transform(df_knn)
+
+    # Assign the filled data back to the original DataFrame
+    df['omv'] = df_knn_imputed[:, features.index('omv')]
+
+    return df
+
+def fill_arf_with_knn(df: pd.DataFrame) -> pd.DataFrame:
+    # Select features for imputation, including the target column 'arf'
+    features = ['make', 'model', 'type_of_vehicle', 'power', 'price', 'omv', 'arf']
+    df_knn = df[features].copy()
+
+    # Encode categorical variables
+    label_encoders = {}
+    for col in ['make', 'model', 'type_of_vehicle']:
+        le = LabelEncoder()
+        df_knn[col] = le.fit_transform(df_knn[col].astype(str))  # Convert to string to avoid NaN values
+        label_encoders[col] = le
+
+    # Initialize KNNImputer
+    knn_imputer = KNNImputer(n_neighbors=5)
+
+    # Use KNNImputer to fill 'arf' column
+    df_knn_imputed = knn_imputer.fit_transform(df_knn)
+
+    # Assign the filled data back to the original DataFrame
+    df['arf'] = df_knn_imputed[:, features.index('arf')]
+
+    return df
+
+def fill_dereg_value_with_knn(df: pd.DataFrame) -> pd.DataFrame:
+    # Select features for imputation, including the target column 'dereg_value'
+    features = ['make', 'model', 'type_of_vehicle', 'power', 'price', 'omv', 'arf', 'dereg_value']
+    df_knn = df[features].copy()
+
+    # Encode categorical variables
+    label_encoders = {}
+    for col in ['make', 'model', 'type_of_vehicle']:
+        le = LabelEncoder()
+        df_knn[col] = le.fit_transform(df_knn[col].astype(str))  # Convert to string to avoid NaN values
+        label_encoders[col] = le
+
+    # Initialize KNNImputer
+    knn_imputer = KNNImputer(n_neighbors=5)
+
+    # Use KNNImputer to fill 'dereg_value' column
+    df_knn_imputed = knn_imputer.fit_transform(df_knn)
+
+    # Assign the filled data back to the original DataFrame
+    df['dereg_value'] = df_knn_imputed[:, features.index('dereg_value')]
+
+    return df
+
+def fill_no_of_owners_with_mode(df: pd.DataFrame) -> pd.DataFrame:
+    # Calculate the mode of 'no_of_owners'
+    mode_value = df['no_of_owners'].mode()[0]
+    
+    # Fill missing values with the mode
+    df['no_of_owners'].fillna(mode_value, inplace=True)
+    
+    return df
+
+# Usage example
+# df = fill_no_of_owners_with_mode(df)
+
