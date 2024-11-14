@@ -247,8 +247,8 @@ def main():
         print("Correlation analysis of training data:")
         analysis_correlation(train_df)
 
-        print("Exception detection in training data:")
-        exception_detect(train_df)
+        # print("Exception detection in training data:")
+        # exception_detect(train_df)
 
     elif args.task == "preprocessing":
         # Load data
